@@ -1,4 +1,4 @@
-export default class Knave2eItemSheet extends ItemSheet {
+export default class Knave2eItemSheet extends foundry.appv1.sheets.ItemSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["knave2e", "sheet", "item"],

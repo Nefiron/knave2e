@@ -14,11 +14,11 @@
   "readme": "https://github.com/Lee-Talman/knave2e/blob/main/README.md",
   "bugs": "https://github.com/Lee-Talman/knave2e/issues",
   "changelog": "https://github.com/Lee-Talman/knave2e/blob/main/CHANGELOG.md",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "compatibility": {
-    "minimum": "10",
-    "verified": "12",
-    "maximum": "12"
+    "minimum": "13",
+    "verified": "13",
+    "maximum": "13"
   },
   "esmodules": [
     "module/knave2e.mjs"

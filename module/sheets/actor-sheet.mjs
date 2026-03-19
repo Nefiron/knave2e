@@ -1,6 +1,6 @@
 import { onAttack, onDamageFromSheet, onCast } from '../helpers/items.mjs';
 
-export default class Knave2eActorSheet extends ActorSheet {
+export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             classes: ['knave2e', 'sheet', 'actor'],
@@ -55,7 +55,7 @@ export default class Knave2eActorSheet extends ActorSheet {
         context.rollData = context.actor.getRollData();
 
         // Add enriched HTML for text editors
-        context.system.enrichedHTML = await TextEditor.enrichHTML(context.system.description);
+        context.system.enrichedHTML = await foundry.applications.ux.TextEditor.enrichHTML(context.system.description);
 
         // Add global knave2e settings for sheet logic
         context.system.settings = {};
@@ -284,11 +284,16 @@ export default class Knave2eActorSheet extends ActorSheet {
     activateListeners(html) {
         super.activateListeners(html);
 
+        // Convert jQuery object to HTMLElement if needed (for v13 compatibility)
+        const element = html instanceof jQuery ? html.get(0) : html;
+
         // Render the item sheet for viewing/editing prior to the editable check.
-        html.find('.item-edit').click((ev) => {
-            const li = $(ev.currentTarget).parents('.knave-item');
-            const item = this.actor.items.get(li.data('itemId'));
-            item.sheet.render(true);
+        element.addEventListener('click', (ev) => {
+            if (ev.target.closest('.item-edit')) {
+                const li = ev.target.closest('.knave-item');
+                const item = this.actor.items.get(li.dataset.itemId);
+                item.sheet.render(true);
+            }
         });
 
         // -------------------------------------------------------------
@@ -296,87 +301,126 @@ export default class Knave2eActorSheet extends ActorSheet {
         if (!this.isEditable) return;
 
         // Add Inventory Item
-        html.find('.item-create').click(this._onItemCreate.bind(this));
+        element.addEventListener('click', (ev) => {
+            if (ev.target.closest('.item-create')) {
+                this._onItemCreate(ev);
+            }
+        });
 
         // Delete Inventory Item
-        html.find('.item-delete').click((ev) => {
-            const li = $(ev.currentTarget).parents('.knave-item');
-            const item = this.actor.items.get(li.data('itemId'));
-            item.delete();
-            li.slideUp(200, () => this.render(false));
+        element.addEventListener('click', (ev) => {
+            if (ev.target.closest('.item-delete')) {
+                const li = ev.target.closest('.knave-item');
+                const item = this.actor.items.get(li.dataset.itemId);
+                item.delete();
+                // Animate removal with a fade effect
+                li.style.opacity = '0';
+                li.style.transition = 'opacity 0.2s ease-out';
+                setTimeout(() => this.render(false), 200);
+            }
         });
 
         // Drag events for macros.
         if (this.actor.isOwner) {
             let handler = (ev) => this._onDragStart(ev);
-            html.find('li.item').each((i, li) => {
+            element.querySelectorAll('li.item').forEach((li) => {
                 if (li.classList.contains('inventory-header')) return;
                 li.setAttribute('draggable', true);
                 li.addEventListener('dragstart', handler, false);
             });
         }
 
-        // Rollable elements (e.g. Abilities)
-        html.on('click', '.rollable', this._onRollable.bind(this));
+        // Setup centralized event delegation for all click handlers
+        element.addEventListener('click', (ev) => {
+            // Rollable elements (e.g. Abilities)
+            if (ev.target.closest('.rollable')) {
+                this._onRollable(ev);
+            }
 
-        // Item Description to chat
-        html.on('click', '.item-name', this._onItemName.bind(this));
+            // Item Description to chat
+            if (ev.target.closest('.item-name')) {
+                this._onItemName(ev);
+            }
 
-        // Adjust Item Quantity
-        html.on('click', '.item-toggle.quantity', this._onQuantity.bind(this));
+            // Adjust Item Quantity
+            if (ev.target.closest('.item-toggle.quantity')) {
+                this._onQuantity(ev);
+            }
 
-        // Toggle Item Icons
-        html.on('click', '.item-toggle', this._onItemToggle.bind(this));
+            // Toggle Item Icons
+            if (ev.target.closest('.item-toggle')) {
+                this._onItemToggle(ev);
+            }
 
-        /* -------------------------------------------- */
-        /*  Item Rolls                                  */
-        /* -------------------------------------------- */
+            /* -------------------------------------------- */
+            /*  Item Rolls                                  */
+            /* -------------------------------------------- */
 
-        // Attack Roll
-        html.on('click', '.item-button.attack', onAttack.bind(this));
+            // Attack Roll
+            if (ev.target.closest('.item-button.attack')) {
+                onAttack.call(this, ev);
+            }
 
-        // Sheet Damage/Direct rolls (chat button rolls handled in './documents/chat-message.mjs')
-        html.on('click', '.item-button.damage.sheet', onDamageFromSheet.bind(this));
+            // Sheet Damage/Direct rolls (chat button rolls handled in './documents/chat-message.mjs')
+            if (ev.target.closest('.item-button.damage.sheet')) {
+                onDamageFromSheet.call(this, ev);
+            }
 
-        // Cast Spell
-        html.on('click', '.item-button.cast', onCast.bind(this));
+            // Cast Spell
+            if (ev.target.closest('.item-button.cast')) {
+                onCast.call(this, ev);
+            }
 
-        /* -------------------------------------------- */
-        /*  Sheet Buttons                               */
-        /* -------------------------------------------- */
+            /* -------------------------------------------- */
+            /*  Sheet Buttons                               */
+            /* -------------------------------------------- */
 
-        // Checks & Abilities.
-        html.on('click', '.actor-button.check', this._onCheck.bind(this));
+            // Checks & Abilities.
+            if (ev.target.closest('.actor-button.check')) {
+                this._onCheck(ev);
+            }
 
-        // Armor Points for Player-Facing Rolls
-        html.on('click', '.actor-button.ap', this._onAP.bind(this));
+            // Armor Points for Player-Facing Rolls
+            if (ev.target.closest('.actor-button.ap')) {
+                this._onAP(ev);
+            }
 
-        // Resting
-        html.on('click', '.actor-button.rest', this._onRest.bind(this));
+            // Resting
+            if (ev.target.closest('.actor-button.rest')) {
+                this._onRest(ev);
+            }
 
-        // Morale
-        html.on('click', '.actor-button.morale', this._onMorale.bind(this));
+            // Morale
+            if (ev.target.closest('.actor-button.morale')) {
+                this._onMorale(ev);
+            }
 
-        // Number Appearing
-        html.on('click', '.actor-button.numberAppearing', this._onNumberAppearing.bind(this));
+            // Number Appearing
+            if (ev.target.closest('.actor-button.numberAppearing')) {
+                this._onNumberAppearing(ev);
+            }
 
-        /* -------------------------------------------- */
-        /*  Sheet Dropdown                              */
-        /* -------------------------------------------- */
+            /* -------------------------------------------- */
+            /*  Sheet Dropdown                              */
+            /* -------------------------------------------- */
 
-        // // Recruit Category
-        // html.on('change', '.actor-select.category', this._onRecruitCategory.bind(this));
+            // // Recruit Category
+            // if (ev.target.closest('.actor-select.category')) {
+            //     this._onRecruitCategory(ev);
+            // }
 
-        // // Recruit Rarity
-        // html.on('change', '.actor-select.rarity', this._onRecruitRarity.bind(this));
+            // // Recruit Rarity
+            // if (ev.target.closest('.actor-select.rarity')) {
+            //     this._onRecruitRarity(ev);
+            // }
+        });
     }
 
     async _onItemName(event) {
         event.preventDefault();
-        const a = event.currentTarget;
+        const li = event.target.closest('li');
         const systemData = this.actor.system;
 
-        const li = a.closest('li');
         const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
 
         if (item.system.description !== '') {
@@ -391,11 +435,11 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     async _onItemToggle(event) {
         event.preventDefault();
-        const a = event.currentTarget;
+        const li = event.target.closest('li');
         const systemData = this.actor.system;
+        const a = event.target.closest('[data-action]');
 
         // Find closest <li> element containing a "data-item-id" attribute
-        const li = a.closest('li');
         const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
 
         switch (a.dataset.action) {
@@ -452,9 +496,9 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     _onQuantity(event) {
         event.preventDefault();
-        const a = event.currentTarget;
+        const li = event.target.closest('li');
+        const a = event.target.closest('[data-action]');
         // Find closest <li> element containing a "data-item-id" attribute
-        const li = a.closest('li');
         const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
         switch (a.dataset.action) {
             case 'increment':
@@ -468,7 +512,6 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     async _onCheck(event) {
         event.preventDefault();
-        const a = event.currentTarget;
         const systemData = this.actor.system;
 
         let r = new Roll();
@@ -515,7 +558,6 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     async _onAP(event) {
         event.preventDefault();
-        const a = event.currentTarget;
         const context = await this.getData();
 
         let r = new Roll('d20+@ap', { ap: context.system.armorPoints });
@@ -529,7 +571,6 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     async _onNumberAppearing(event) {
         event.preventDefault();
-        const a = event.currentTarget;
         const systemData = this.actor.system;
 
         let formula;
@@ -590,6 +631,9 @@ export default class Knave2eActorSheet extends ActorSheet {
     async _onItemCreate(event) {
         event.preventDefault();
 
+        // Capture header before async operation (event context is lost after await)
+        const header = event.currentTarget;
+
         let itemType;
 
         if (this.actor.type === 'monster') {
@@ -636,7 +680,6 @@ export default class Knave2eActorSheet extends ActorSheet {
             });
         }
 
-        const header = event.currentTarget;
         // Grab any data associated with this control.
         const data = foundry.utils.duplicate(header.dataset);
         // Initialize a default name.
@@ -836,7 +879,7 @@ export default class Knave2eActorSheet extends ActorSheet {
 
     async _onRollable(event) {
         // event.preventDefault();
-        const element = event.currentTarget;
+        const element = event.target.closest('.rollable');
         const dataset = element.dataset;
 
         // Handle item rolls.

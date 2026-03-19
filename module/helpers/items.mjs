@@ -54,9 +54,7 @@ export async function damageDialog() {
 
 export async function onCast(event) {
     event.preventDefault();
-    const a = event.currentTarget;
-
-    const li = a.closest('li');
+    const li = event.target.closest('li');
     const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
     const itemData = item.system;
     const systemData = this.actor.system;
@@ -156,9 +154,7 @@ export async function onCast(event) {
 
 export async function onAttack(event) {
     event.preventDefault();
-    const a = event.currentTarget;
-
-    const li = a.closest('li');
+    const li = event.target.closest('li');
     const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
     const itemData = item.system;
     const hasDescription = itemData.description === '' ? false : true;
@@ -355,28 +351,23 @@ export async function onAttack(event) {
 
 export async function onDamageFromChat(event) {
     event.preventDefault();
-    const a = event.currentTarget;
-
-    const button = a.closest('button');
+    const button = event.target.closest('button');
     const actor = button.dataset.actorId ? game.actors.get(button.dataset.actorId) : null;
     const item = button.dataset.itemId ? actor.items.get(button.dataset.itemId) : null;
 
-    _rollDamage(a, actor, item);
+    _rollDamage(button, actor, item, event);
 }
 
 export async function onDamageFromSheet(event) {
     event.preventDefault();
-    const a = event.currentTarget;
-
-    // Find closest <li> element containing a "data-item-id" attribute
-    const li = a.closest('li');
+    const li = event.target.closest('li');
     const actor = this.actor;
     const item = li.dataset.itemId ? this.actor.items.get(li.dataset.itemId) : null;
 
-    _rollDamage(a, actor, item);
+    _rollDamage(event.target, actor, item, event);
 }
 
-async function _rollDamage(a, actor, item) {
+async function _rollDamage(button, actor, item, event) {
     const systemData = actor.system;
     const itemData = item.system;
 
@@ -427,7 +418,7 @@ async function _rollDamage(a, actor, item) {
                         //TODO: localize this string
                         rollFlavor =
                             rollFlavor +
-                            `. ${game.i18n.localize('KNAVE2E.PowerAttack')} ${game.i18n.localize('KNAVE2E.Breaks')} one of ${this.actor.name}'s ${item.name
+                            `. ${game.i18n.localize('KNAVE2E.PowerAttack')} ${game.i18n.localize('KNAVE2E.Breaks')} one of ${actor.name}'s ${item.name
                             }s!`;
                     }
 
@@ -436,7 +427,7 @@ async function _rollDamage(a, actor, item) {
         }
     }
 
-    if (a.dataset.action === 'direct') {
+    if (button.dataset.action === 'direct') {
         formula = `3*(@amount@size+@bonus)`;
     }
 
@@ -455,9 +446,7 @@ async function _rollDamage(a, actor, item) {
 
 export async function onLinkFromChat(event) {
     event.preventDefault();
-    const a = event.currentTarget;
-
-    const link = a.closest('a');
+    const link = event.target.closest('a');
     const item = game.items.get(link.dataset.id);
 
     ChatMessage.create({

@@ -220,7 +220,6 @@ export default class Knave2eCharacter extends Knave2eActorType {
     }
 
     _deriveHeldItemSlots() {
-        const modifiedItems = [];
         let itemSlots = 0;
         for (const item of this.parent.items.contents) {
             item.system.held = item.system.quantity;
@@ -230,15 +229,12 @@ export default class Knave2eCharacter extends Knave2eActorType {
                 item.system.held = 0;
                 item.system.dropped = true;
             }
-            modifiedItems.push(item);
             itemSlots += item.system.quantity * item.system.slots;
         }
-        this.parent.updateEmbeddedDocuments('Item', modifiedItems);
         return itemSlots;
     }
 
     _deriveDroppedItems(remainder) {
-        const modifiedItems = [];
         const sortedItems = this.parent.items.contents.sort((a, b) => a.sort - b.sort);
         iterateRemainder: while (remainder > 0 && sortedItems.length > 0) {
             for (const item of sortedItems) {
@@ -252,17 +248,14 @@ export default class Knave2eCharacter extends Knave2eActorType {
                         if (remainder <= 0) {
                             item.system.progress =
                                 ((item.system.quantity - item.system.held) / item.system.quantity) * 100;
-                            modifiedItems.push(item);
                             break iterateRemainder;
                         }
                     }
                 }
                 item.system.progress = ((item.system.quantity - item.system.held) / item.system.quantity) * 100;
-                modifiedItems.push(item);
             }
             break iterateRemainder;
         }
-        this.parent.updateEmbeddedDocuments('Item', modifiedItems);
     }
 
     _deriveSpells() {

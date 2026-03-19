@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.5.0
+- **BREAKING**: Upgraded system for Foundry V13 compatibility
+- **BREAKING**: Removed jQuery dependency; migrated all event handling to native DOM methods
+- Updated minimum/verified/maximum compatibility to Foundry V13
+
 ## 0.3.3
 - Update system for v12 compatibility
 - Fix deprecation warnings after migration to v12
