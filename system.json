@@ -14,7 +14,7 @@
   "readme": "https://github.com/Lee-Talman/knave2e/blob/main/README.md",
   "bugs": "https://github.com/Lee-Talman/knave2e/issues",
   "changelog": "https://github.com/Lee-Talman/knave2e/blob/main/CHANGELOG.md",
-  "version": "0.5.0",
+  "version": "0.5.6",
   "compatibility": {
     "minimum": "13",
     "verified": "13",
