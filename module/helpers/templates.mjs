@@ -4,7 +4,7 @@
  * @return {Promise}
  */
 export const preloadHandlebarsTemplates = async function () {
-  return foundry.applications.handlebars.loadTemplates([
+  return loadTemplates([
     // Actor partials.
     "systems/knave2e/templates/actor/parts/actor-character-items.hbs",
   ]);

@@ -279,24 +279,20 @@ export default class Knave2eCharacter extends Knave2eActorType {
         const actorRestData = await super.getRestData();
         const update = { ...actorRestData, 'system.spells.value': 0 };
 
-        const type = await Dialog.wait({
-            title: `${game.i18n.localize('KNAVE2E.RestDialogTitle')}`,
-            content: `${game.i18n.localize('KNAVE2E.RestDialogContent')}`,
-            buttons: {
-                standard: {
-                    label: game.i18n.localize('KNAVE2E.Standard'),
-                    callback: () => {
-                        return 'standard';
-                    },
-                },
-                safe: {
-                    label: game.i18n.localize('KNAVE2E.SafeHaven'),
-                    callback: () => {
-                        return 'safe';
-                    },
-                },
+        const type = await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.RestDialogTitle')}` },
+            content: `
+                <p>${game.i18n.localize('KNAVE2E.RestDialogContent')}</p>
+                <select name="restType" autofocus>
+                    <option value="standard">${game.i18n.localize('KNAVE2E.Standard')}</option>
+                    <option value="safe">${game.i18n.localize('KNAVE2E.SafeHaven')}</option>
+                </select>
+            `,
+            ok: {
+                label: 'OK',
+                callback: (event, button) => button.form.elements.restType.value,
             },
-            default: 'standard',
+            rejectClose: false,
         });
 
         if (type === 'standard') {

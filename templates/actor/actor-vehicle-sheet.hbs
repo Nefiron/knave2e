@@ -20,7 +20,8 @@
                         <input class="transparent flex3 no-border detail name" name="name" type="text"
                             value="{{actor.name}}" placeholder="{{actor.name}}" />
                     </div>
-                    <div class="grid grid-3col no-wrap flex-between flex-group-center" style="margin-top: 5px;">
+
+                    <section class="sheet-row grid grid-3col no-wrap flex-between flex-group-center">
                         <div class="grid-span-1 flexcol no-wrap flex-group-center info-2">
                             <a class="resource-label actor-button check">{{localize "KNAVE2E.Crew"}}</a>
                             <input class="resource-label content narrow" type="text" name="system.crew"
@@ -36,8 +37,9 @@
                             <input class="resource-label content narrow" type="text" name="system.coins"
                                 value="{{system.coins}}" data-dtype="Number" />
                         </div>
-                    </div>
-                    <div class="resources flexrow flex-group-center" style="margin-top:5px;">
+                    </section>
+
+                    <section class="resources flexrow flex-group-center sheet-resources">
                         <div class="grid grid-3col flex-group-center">
                             <div class="resource-label grid-span-3 align-center">{{localize "KNAVE2E.Slots"}}</div>
                             <i class="fa-solid fa-weight-hanging grid-span-1 align-right"></i>
@@ -63,27 +65,28 @@
                             <input class="resource-label narrow content grid-span-1 align-center" type="text"
                                 name="system.ammo.bullet" value="{{system.ammo.bullet}}" data-dtype="Number" />
                         </div>
-                    </div>
+                            </section>
             </header>
 
             {{!-- Sheet Body --}}
             <section class="sheet-body">
-                <div class="items">
-                    <ol class="items-list">
-                        <li class="knave-item grid grid-12col items-header">
-                            <div class="resource-label item-name-header grid-span-8">{{localize "KNAVE2E.ItemName"}}
-                            </div>
+                <div class="items actor-inventory vehicle-inventory">
+                    <header class="inventory-toolbar">
+                        <a class="item-control item-create inventory-add" title="Create item" data-type="item">
+                            <i class="fas fa-plus"></i>
+                            <span>Add item</span>
+                        </a>
+                    </header>
+
+                    <ol class="items-list inventory-list">
+                        <li class="knave-item grid grid-12col items-header inventory-list-header">
+                            <div class="resource-label item-name-header grid-span-8">{{localize "KNAVE2E.ItemName"}}</div>
                             <div class="resource-label item-slots-header grid-span-1">{{localize "KNAVE2E.Slots"}}</div>
-                            <div class="resource-label item-slots-header grid-span-1">{{localize
-                                "KNAVE2E.QuantityAbbr"}}</div>
-                            <div class="resource-label item-controls-header grid-span-2">
-                                <a class="item-control item-create" title="Create item" data-type="item"><i
-                                        class="fas fa-plus"></i> Add
-                                    item</a>
-                            </div>
+                            <div class="resource-label item-slots-header grid-span-1">{{localize "KNAVE2E.QuantityAbbr"}}</div>
+                            <div class="resource-label item-controls-header grid-span-2">Actions</div>
                         </li>
                         {{#each items as |item id|}}
-                        <li class="knave-item grid grid-12col {{#if system.dropped}}dropped{{/if}}"
+                        <li class="knave-item grid grid-12col inventory-row {{#if item.system.dropped}}is-dropped{{/if}}"
                             data-item-id="{{item._id}}">
                             <div class="item-progress-wrapper grid grid-span-12 grid-12col">
                                 <div class="item-progress-fill grid grid-span-12 grid-12col"
@@ -94,18 +97,18 @@
                                                 src="{{item.img}}" title="{{item.name}}" width="36" height="36" /></a>
                                     </div>
 
-                                    <a class="item-name detail grid-span-7">{{#if item.system.dropped}}({{localize
-                                        "KNAVE2E.Dropped"}})
+                                    <a class="item-name detail grid-span-7">{{#if item.system.dropped}}<span class="item-state">({{localize
+                                        "KNAVE2E.Dropped"}})</span>
                                         {{/if}}{{item.name}}</a>
 
                                     <div class="item-slots grid-span-1 item-prop">{{item.system.slots}}</div>
-                                    <div class="item-slots grid-span-1 item-prop">
+                                    <div class="item-slots grid-span-1 item-prop item-quantity-controls">
                                         <div class="grid-span-3 flexrow flex-group-center">
                                             <a class="item-toggle quantity" data-action="decrement">
-                                                <i class="fas fa-caret-down"></i></a>
-                                            <div class="item-prop">{{item.system.quantity}}</div>
+                                                <i class="fa-solid fa-chevron-down"></i></a>
+                                            <div class="item-prop quantity-value">{{item.system.quantity}}</div>
                                             <a class="item-toggle quantity" data-action="increment">
-                                                <i class="fas fa-caret-up"></i></a>
+                                                <i class="fa-solid fa-chevron-up"></i></a>
                                         </div>
                                     </div>
                                     <div class="item-controls grid-span-2">
@@ -135,13 +138,17 @@
                                 </div>
                             </div>
                         </li>
+                        {{else}}
+                        <li class="inventory-empty">
+                            <span class="detail">No items yet. Use Add item to create one.</span>
+                        </li>
                         {{/each}}
                     </ol>
                 </div>
             </section>
             <footer class="footer">
-                <div class="flexrow no-wrap flex-group-center ">
-                    <p style="font-size:smaller">Copyright &#169; 2023 <a
+                <div class="flexrow no-wrap flex-group-center">
+                    <p class="footer-copy">Copyright &#169; 2023 <a
                             href="https://www.patreon.com/questingbeast/posts">Ben
                             Milton and Questing Beast LLC.</a> Logo Design by <a
                             href="https://www.behance.net/MindkillerINK?locale=en_US">Tim Hastings</a>.</p>

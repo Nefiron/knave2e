@@ -1,52 +1,41 @@
 export async function checkDialog(data) {
-    let attackBonus = await Dialog.wait({
-        title: 'Check',
-        content: `${game.i18n.localize('KNAVE2E.CheckDialog')}<br>${game.i18n.localize('KNAVE2E.SkipDialog')}<br>`,
-        buttons: {
-            standard: {
-                label: `${game.i18n.localize('KNAVE2E.Level')} (${data.level})`,
-                callback: () => {
-                    return data.level;
-                },
-            },
-            half: {
-                label: `${game.i18n.localize('KNAVE2E.HalfLevel')} (${Math.floor(data.level / 2)})`,
-                callback: () => {
-                    return Math.floor(data.level / 2);
-                },
-            },
-            zero: {
-                label: game.i18n.localize('KNAVE2E.None'),
-                callback: () => {
-                    return '';
-                },
-            },
+    let attackBonus = await foundry.applications.api.DialogV2.prompt({
+        window: { title: 'Check' },
+        content: `
+            <p>${game.i18n.localize('KNAVE2E.CheckDialog')}</p>
+            <p>${game.i18n.localize('KNAVE2E.SkipDialog')}</p>
+            <select name="attackBonus" autofocus>
+                <option value="${data.level}">${game.i18n.localize('KNAVE2E.Level')} (${data.level})</option>
+                <option value="${Math.floor(data.level / 2)}">${game.i18n.localize('KNAVE2E.HalfLevel')} (${Math.floor(data.level / 2)})</option>
+                <option value="">${game.i18n.localize('KNAVE2E.None')}</option>
+            </select>
+        `,
+        ok: {
+            label: game.i18n.localize('KNAVE2E.Check'),
+            callback: (event, button) => button.form.elements.attackBonus.value,
         },
-        default: 'standard',
+        rejectClose: false,
     });
 
     return attackBonus;
 }
 
 export async function damageDialog() {
-    let powerAttack = await Dialog.wait({
-        title: `${game.i18n.localize('KNAVE2E.Damage')}`,
-        content: `${game.i18n.localize('KNAVE2E.DamageDialog')}<br/>${game.i18n.localize('KNAVE2E.SkipDialog')}<br/>`,
-        buttons: {
-            standard: {
-                label: game.i18n.localize('KNAVE2E.Standard'),
-                callback: async () => {
-                    return false;
-                },
-            },
-            power: {
-                label: game.i18n.localize('KNAVE2E.PowerAttack'),
-                callback: async () => {
-                    return true;
-                },
-            },
+    let powerAttack = await foundry.applications.api.DialogV2.prompt({
+        window: { title: `${game.i18n.localize('KNAVE2E.Damage')}` },
+        content: `
+            <p>${game.i18n.localize('KNAVE2E.DamageDialog')}</p>
+            <p>${game.i18n.localize('KNAVE2E.SkipDialog')}</p>
+            <select name="attackType" autofocus>
+                <option value="standard">${game.i18n.localize('KNAVE2E.Standard')}</option>
+                <option value="power">${game.i18n.localize('KNAVE2E.PowerAttack')}</option>
+            </select>
+        `,
+        ok: {
+            label: game.i18n.localize('KNAVE2E.Damage'),
+            callback: (event, button) => button.form.elements.attackType.value === 'power',
         },
-        default: 'standard',
+        rejectClose: false,
     });
 
     return powerAttack;
@@ -62,33 +51,27 @@ export async function onCast(event) {
     if (game.settings.get('knave2e', 'automaticSpells')) {
         // Reminder if actor cannot cast spells
         if (systemData.spells.max <= 0) {
-            Dialog.prompt({
-                title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}`,
+            await foundry.applications.api.DialogV2.prompt({
+                window: { title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}` },
                 content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.CastDialogContentMax')}`,
-                label: 'OK',
-                callback: (html) => {
-                    return;
-                },
+                ok: { label: 'OK' },
+                rejectClose: false,
             });
             return;
         } else if (systemData.spells.value >= systemData.spells.max) {
-            Dialog.prompt({
-                title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}`,
+            await foundry.applications.api.DialogV2.prompt({
+                window: { title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}` },
                 content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.CastDialogContentValue')}`,
-                label: 'OK',
-                callback: (html) => {
-                    return;
-                },
+                ok: { label: 'OK' },
+                rejectClose: false,
             });
             return;
         } else if (itemData.cast === true) {
-            Dialog.prompt({
-                title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}`,
+            await foundry.applications.api.DialogV2.prompt({
+                window: { title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}` },
                 content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.CastDialogContentUsed')}`,
-                label: 'OK',
-                callback: (html) => {
-                    return;
-                },
+                ok: { label: 'OK' },
+                rejectClose: false,
             });
             return;
         } else {
@@ -112,13 +95,11 @@ export async function onCast(event) {
     } else {
         if (game.settings.get('knave2e', 'enforceSpells')) {
             if (itemData.cast === true) {
-                Dialog.prompt({
-                    title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}`,
+                await foundry.applications.api.DialogV2.prompt({
+                    window: { title: `${game.i18n.localize('KNAVE2E.CastDialogTitle')}` },
                     content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.CastDialogContentUsed')}`,
-                    label: 'OK',
-                    callback: (html) => {
-                        return;
-                    },
+                    ok: { label: 'OK' },
+                    rejectClose: false,
                 });
                 return;
             } else {
@@ -163,24 +144,20 @@ export async function onAttack(event) {
     // Return if the weapon is broken
     if (item.type === 'weapon' && itemData.broken === true && itemData.breakable && game.settings.get('knave2e', 'enforceBreaks')) {
         if (itemData.quantity > 1) {
-        Dialog.prompt({
-            title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}`,
+        await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}` },
             //TODO: localize this string
             content: `All of ${this.actor.name}'s ${item.name}s are broken!`,
-            label: 'OK',
-            callback: (html) => {
-                return;
-            },
+            ok: { label: 'OK' },
+            rejectClose: false,
         });
         }
         else {
-        Dialog.prompt({
-            title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}`,
+        await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}` },
             content: `${item.name} ${game.i18n.localize('KNAVE2E.IsBroken')}!`,
-            label: 'OK',
-            callback: (html) => {
-                return;
-            },
+            ok: { label: 'OK' },
+            rejectClose: false,
         });
         }
         return;
@@ -215,13 +192,11 @@ export async function onAttack(event) {
 
     // Return early if a ranged weapon is out of ammo
     if (!hasAmmo(item, this.actor) && game.settings.get('knave2e', 'enforceAmmo')) {
-        Dialog.prompt({
-            title: `${game.i18n.localize('KNAVE2E.OutOfAmmoTitleDialog')}`,
+        await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.OutOfAmmoTitleDialog')}` },
             content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.OutOfAmmoContentDialog')} ${item.name}!`,
-            label: 'OK',
-            callback: (html) => {
-                return;
-            },
+            ok: { label: 'OK' },
+            rejectClose: false,
         });
 
         return;
@@ -376,13 +351,11 @@ async function _rollDamage(button, actor, item, event) {
 
     // Return if the weapon is broken
     if (item.type === 'weapon' && itemData.broken === true && itemData.breakable === false && game.settings.get('knave2e', 'enforceBreaks')) {
-        Dialog.prompt({
-            title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}`,
+        await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.Item')} ${game.i18n.localize('KNAVE2E.Broken')}` },
             content: `${item.name} ${game.i18n.localize('KNAVE2E.IsBroken')}!`,
-            label: 'OK',
-            callback: (html) => {
-                return;
-            },
+            ok: { label: 'OK' },
+            rejectClose: false,
         });
 
         return;

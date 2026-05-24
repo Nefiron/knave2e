@@ -1,11 +1,11 @@
 import { onAttack, onDamageFromSheet, onCast } from '../helpers/items.mjs';
 
-export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
+export default class Knave2eActorSheet extends ActorSheet {
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             classes: ['knave2e', 'sheet', 'actor'],
-            width: 640,
-            height: 670,
+            width: 760,
+            height: 760,
             dragDrop: [
                 { dragSelector: '.item-list .item', dropSelector: null },
                 { dragSelector: '.knave-item', dropSelector: null },
@@ -55,7 +55,7 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
         context.rollData = context.actor.getRollData();
 
         // Add enriched HTML for text editors
-        context.system.enrichedHTML = await foundry.applications.ux.TextEditor.enrichHTML(context.system.description);
+        context.system.enrichedHTML = await TextEditor.enrichHTML(context.system.description);
 
         // Add global knave2e settings for sheet logic
         context.system.settings = {};
@@ -285,7 +285,8 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
         super.activateListeners(html);
 
         // Convert jQuery object to HTMLElement if needed (for v13 compatibility)
-        const element = html instanceof jQuery ? html.get(0) : html;
+        const isJQueryObject = typeof jQuery !== 'undefined' && html instanceof jQuery;
+        const element = isJQueryObject ? html.get(0) : html;
 
         // Render the item sheet for viewing/editing prior to the editable check.
         element.addEventListener('click', (ev) => {
@@ -472,13 +473,11 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
                             'system.relic.isActive': !item.system.relic.isActive,
                         });
                     } else if (systemData.blessings.value >= systemData.blessings.max) {
-                        Dialog.prompt({
-                            title: `${game.i18n.localize('KNAVE2E.BlessingDialogTitle')}`,
+                        await foundry.applications.api.DialogV2.prompt({
+                            window: { title: `${game.i18n.localize('KNAVE2E.BlessingDialogTitle')}` },
                             content: `${this.actor.name} ${game.i18n.localize('KNAVE2E.BlessingDialogContentMax')}`,
-                            label: 'OK',
-                            callback: (html) => {
-                                return;
-                            },
+                            ok: { label: 'OK' },
+                            rejectClose: false,
                         });
                         return;
                     }
@@ -520,31 +519,21 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
         const speaker = ChatMessage.getSpeaker({ actor: this.actor });
         const rollMode = game.settings.get('core', 'rollMode');
 
-        rollMod = await Dialog.wait({
-            title: 'Check',
-            content: 'Add a bonus to this Check?', //todo: localize
-            buttons: {
-                standard: {
-                    label: game.i18n.localize('KNAVE2E.Level'),
-                    callback: () => {
-                        return systemData.level;
-                    },
-                },
-                half: {
-                    label: game.i18n.localize('KNAVE2E.HalfLevel'),
-                    callback: () => {
-                        return Math.floor(systemData.level / 2);
-                    },
-                },
-                zero: {
-                    label: game.i18n.localize('KNAVE2E.None'),
-                    callback: () => {
-                        return 0;
-                    },
-                },
+        rollMod = await foundry.applications.api.DialogV2.prompt({
+            window: { title: 'Check' },
+            content: `
+                <p>Add a bonus to this Check?</p>
+                <select name="checkBonus" autofocus>
+                    <option value="${systemData.level}">${game.i18n.localize('KNAVE2E.Level')} (${systemData.level})</option>
+                    <option value="${Math.floor(systemData.level / 2)}">${game.i18n.localize('KNAVE2E.HalfLevel')} (${Math.floor(systemData.level / 2)})</option>
+                    <option value="0">${game.i18n.localize('KNAVE2E.None')}</option>
+                </select>
+            `,
+            ok: {
+                label: game.i18n.localize('KNAVE2E.Check'),
+                callback: (event, button) => Number(button.form.elements.checkBonus.value),
             },
-            default: 'standard',
-            // close: () => { reject() },
+            rejectClose: false,
         });
 
         r = new Roll('1d20 + @mod', { mod: rollMod });
@@ -576,31 +565,19 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
         let formula;
         let rollFlavor;
 
-        let type = await Dialog.wait({
-            title: `${game.i18n.localize('KNAVE2E.NumberAppearingDialogTitle')}`,
-            buttons: {
-                dungeon: {
-                    label: `${game.i18n.localize('KNAVE2E.NumberAppearingDungeon')} (${systemData.numberAppearing.dungeon
-                        })`,
-                    callback: () => {
-                        return 'dungeon';
-                    },
-                },
-                wilderness: {
-                    label: `${game.i18n.localize('KNAVE2E.NumberAppearingWilderness')} (${systemData.numberAppearing.wilderness
-                        })`,
-                    callback: () => {
-                        return 'wilderness';
-                    },
-                },
-                cancel: {
-                    label: game.i18n.localize('KNAVE2E.Cancel'),
-                    callback: () => {
-                        return;
-                    },
-                },
+        let type = await foundry.applications.api.DialogV2.prompt({
+            window: { title: `${game.i18n.localize('KNAVE2E.NumberAppearingDialogTitle')}` },
+            content: `
+                <select name="numberAppearingType" autofocus>
+                    <option value="dungeon">${game.i18n.localize('KNAVE2E.NumberAppearingDungeon')} (${systemData.numberAppearing.dungeon})</option>
+                    <option value="wilderness">${game.i18n.localize('KNAVE2E.NumberAppearingWilderness')} (${systemData.numberAppearing.wilderness})</option>
+                </select>
+            `,
+            ok: {
+                label: 'Roll',
+                callback: (event, button) => button.form.elements.numberAppearingType.value,
             },
-            default: 'dungeon',
+            rejectClose: false,
         });
 
         if (type) {
@@ -640,48 +617,28 @@ export default class Knave2eActorSheet extends foundry.appv1.sheets.ActorSheet {
             itemType = 'monsterAttack';
         } else {
             // Get the type of item to create.
-            itemType = await Dialog.wait({
-                title: `${game.i18n.localize('KNAVE2E.CreateItemDialogHeader')}`,
-                content: `${game.i18n.localize('KNAVE2E.CreateItemDialogContent')}`,
-                buttons: {
-                    armor: {
-                        label: game.i18n.localize('KNAVE2E.Armor'),
-                        callback: () => {
-                            return 'armor';
-                        },
-                    },
-                    equipment: {
-                        label: game.i18n.localize('KNAVE2E.Equipment'),
-                        callback: () => {
-                            return 'equipment';
-                        },
-                    },
-                    lightSource: {
-                        label: game.i18n.localize('KNAVE2E.LightSource'),
-                        callback: () => {
-                            return 'lightSource';
-                        },
-                    },
-                    spellbook: {
-                        label: game.i18n.localize('KNAVE2E.Spellbook'),
-                        callback: () => {
-                            return 'spellbook';
-                        },
-                    },
-                    weapon: {
-                        label: game.i18n.localize('KNAVE2E.Weapon'),
-                        callback: () => {
-                            return 'weapon';
-                        },
-                    },
+            itemType = await foundry.applications.api.DialogV2.prompt({
+                window: { title: `${game.i18n.localize('KNAVE2E.CreateItemDialogHeader')}` },
+                content: `
+                    <p>${game.i18n.localize('KNAVE2E.CreateItemDialogContent')}</p>
+                    <select name="itemType" autofocus>
+                        <option value="weapon">${game.i18n.localize('KNAVE2E.Weapon')}</option>
+                        <option value="armor">${game.i18n.localize('KNAVE2E.Armor')}</option>
+                        <option value="equipment">${game.i18n.localize('KNAVE2E.Equipment')}</option>
+                        <option value="lightSource">${game.i18n.localize('KNAVE2E.LightSource')}</option>
+                        <option value="spellbook">${game.i18n.localize('KNAVE2E.Spellbook')}</option>
+                    </select>
+                `,
+                ok: {
+                    label: 'Create',
+                    callback: (event, button) => button.form.elements.itemType.value,
                 },
-                default: 'weapon',
-                // close: () => { reject() },
+                rejectClose: false,
             });
         }
 
         // Grab any data associated with this control.
-        const data = foundry.utils.duplicate(header.dataset);
+        const data = foundry.utils.deepClone(header.dataset);
         // Initialize a default name.
         const name = `New ${itemType.capitalize()}`;
         // Prepare the item object.

@@ -4,6 +4,7 @@ import { preloadHandlebarsTemplates } from './helpers/templates.mjs';
 
 import * as DataModels from './data/_module.mjs';
 import { Knave2eActor, Knave2eItem, Knave2eChatMessage } from './documents/_module.mjs';
+import { onDamageFromChat, onLinkFromChat } from './helpers/items.mjs';
 import { Knave2eActorSheet, Knave2eItemSheet } from './sheets/_module.mjs';
 import { SYSTEM } from './config/system.mjs';
 
@@ -318,10 +319,10 @@ Hooks.once('init', function () {
     CONFIG.ChatMessage.documentClass = Knave2eChatMessage;
 
     // Register sheet application classes
-    foundry.documents.collections.Actors.unregisterSheet('core', foundry.appv1.sheets.ActorSheet);
-    foundry.documents.collections.Actors.registerSheet('knave2e', Knave2eActorSheet, { makeDefault: true });
-    foundry.documents.collections.Items.unregisterSheet('core', foundry.appv1.sheets.ItemSheet);
-    foundry.documents.collections.Items.registerSheet('knave2e', Knave2eItemSheet, { makeDefault: true });
+    Actors.unregisterSheet('core', ActorSheet);
+    Actors.registerSheet('knave2e', Knave2eActorSheet, { makeDefault: true });
+    Items.unregisterSheet('core', ItemSheet);
+    Items.registerSheet('knave2e', Knave2eItemSheet, { makeDefault: true });
 
     // Preload Handlebars templates.
     return preloadHandlebarsTemplates();
@@ -353,7 +354,31 @@ Handlebars.registerHelper('toLowerCase', function (str) {
 Hooks.once('ready', function () {
     // Wait to register hotbar drop hook on ready so that modules could register earlier if they want to
     Hooks.on('hotbarDrop', (bar, data, slot) => createItemMacro(data, slot));
+
+    // Attach chat interaction handlers in render hooks instead of overriding ChatMessage HTML methods.
+    Hooks.on('renderChatMessage', (message, html) => bindChatMessageListeners(message, html));
+    Hooks.on('renderChatMessageHTML', (message, html) => bindChatMessageListeners(message, html));
 });
+
+function bindChatMessageListeners(message, html) {
+    const root = html?.querySelectorAll
+        ? html
+        : html?.[0]?.querySelectorAll
+            ? html[0]
+            : null;
+
+    if (!root) return;
+    if (root.dataset?.knave2eChatBound === 'true') return;
+    if (root.dataset) root.dataset.knave2eChatBound = 'true';
+
+    root.querySelectorAll('.item-button.damage.chat').forEach((button) => {
+        button.addEventListener('click', onDamageFromChat.bind(message));
+    });
+
+    root.querySelectorAll('.content-link').forEach((link) => {
+        link.addEventListener('click', onLinkFromChat.bind(message));
+    });
+}
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
